@@ -226,6 +226,9 @@ We selected the champion model based on \*\*ROC-AUC\*\*, Precision, Recall, and 
 
 \## 8. 🚀 Deployment
 
+<img width="738" height="905" alt="Screenshot 2026-01-23 233537" src="https://github.com/user-attachments/assets/f7b234a4-1950-43ec-bba3-705af96d66b3" />
+
+
 The model is deployed using \*\*Streamlit\*\* to provide a user-friendly interface for tax officers.
 
 
