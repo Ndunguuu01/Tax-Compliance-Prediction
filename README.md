@@ -1,235 +1,276 @@
-###***Corporate Income Tax _Loss_Prediction***
+\# 📉 Corporate Income Tax (CIT) Loss Prediction
 
-***1. Executive Summary***
+\### Group 9 Capstone Project | Moringa School
 
-This project develops an end-to-end machine learning system for predicting Corporate Income Tax (CIT) risk. The system analyzes historical corporate financial and compliance data to classify taxpayers into risk categories and is deployed as a web-based decision support tool.
+
+
+<img width="100%" alt="Header Image" src="https://github.com/user-attachments/assets/093ba018-e048-479e-9959-274aeffcb24b" />
+
+
+
+!\[Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=for-the-badge\&logo=python\&logoColor=white)
+
+!\[Scikit-Learn](https://img.shields.io/badge/Library-Scikit\_Learn-orange?style=for-the-badge\&logo=scikit-learn\&logoColor=white)
+
+!\[Streamlit](https://img.shields.io/badge/Deployment-Streamlit-FF4B4B?style=for-the-badge\&logo=streamlit\&logoColor=white)
+
+!\[Status](https://img.shields.io/badge/Status-Completed-success?style=for-the-badge)
+
+
+
+---
+
+
+
+\## 1. 📖 Executive Summary
+
+This project develops an end-to-end machine learning system for predicting \*\*Corporate Income Tax (CIT) risk\*\*. The system analyzes historical corporate financial and compliance data to classify taxpayers into risk categories and is deployed as a web-based decision support tool.
+
+
 
 The project demonstrates the complete data science lifecycle:
-problem definition → data engineering → EDA → modeling → evaluation → deployment → business impact.
 
-***2. Business Understanding***
+`Problem Definition` → `Data Engineering` → `EDA` → `Modeling` → `Evaluation` → `Deployment` → `Business Impact`
 
-***2.1 Problem Statement***
 
-Tax authorities face challenges in:
 
-➤ Identifying non-compliant taxpayers early.
+---
 
-➤ Efficiently allocating audit resources.
 
-➤ Handling large volumes of corporate data manually.
 
-➤ Traditional rule-based systems are limited and reactive.
+\## 2. 💼 Business Understanding
 
-***2.2 Business Objective***
+
+
+\### 2.1 Problem Statement
+
+Tax authorities face critical challenges:
+
+\* \*\*Identification:\*\* Difficulty identifying non-compliant taxpayers early.
+
+\* \*\*Resources:\*\* Inefficient allocation of audit resources.
+
+\* \*\*Volume:\*\* Handling large volumes of corporate data manually.
+
+\* \*\*Limitations:\*\* Traditional rule-based systems are limited and reactive.
+
+
+
+\### 2.2 Business Objective
 
 To build a predictive system that:
 
-i.  Estimates the probability of CIT non-compliance.
+1\.  Estimates the probability of CIT non-compliance.
 
-ii. Supports risk-based audit selection.
+2\.  Supports risk-based audit selection.
 
-iii. Improves tax compliance efficiency.
+3\.  Improves tax compliance efficiency.
 
-***3. Project Objectives***
 
-***Technical Objectives***
 
-i. Clean and prepare corporate tax data.
+---
 
-ii. Perform exploratory data analysis.
 
-iii. Engineer meaningful predictive features.
 
-iv. Train and evaluate machine learning models.
+\## 3. 🎯 Project Objectives
 
-v. Deploy the best-performing model.
 
-***Business Objectives***
 
-1. Improve audit targeting.
+| Technical Objectives | Business Objectives |
 
-2. Reduce compliance enforcement costs.
+| :--- | :--- |
 
-3. Enable data-driven tax policy decisions.
+| 1. Clean and prepare corporate tax data. | 1. Improve audit targeting. |
 
-***4. Data Understanding***
+| 2. Perform Exploratory Data Analysis (EDA). | 2. Reduce compliance enforcement costs. |
 
-The dataset is a comma separated values file containing 313,870 rows and  61 columns.
+| 3. Engineer meaningful predictive features. | 3. Enable data-driven tax policy decisions. |
 
-✔ The dataset contains anonymized corporate records including:
+| 4. Train and evaluate ML models. | |
 
-✔ Turnover categories
+| 5. Deploy the best-performing model. | |
 
-✔ Industry classification
 
-✔ Filing frequency
 
-✔ Loss/profit status
+---
 
-✔ Historical compliance indicators
 
-**Data Characteristics**
 
-✔ Mixed numerical and categorical variables
+\## 4. 📊 Data Understanding
 
-✔ Class imbalance (more compliant than non-compliant firms)
+The dataset contains \*\*313,870 rows\*\* and \*\*61 columns\*\*. It includes anonymized corporate records such as Turnover categories, Industry classification, Filing frequency, and Loss/profit status.
 
-✔ No personally identifiable information (PII)
 
-***5. Tools & Technologies***
 
-**Category―Tools**
+\*\*Data Characteristics:\*\*
 
-☑ Programming	Python
+\* ✅ Mixed numerical and categorical variables.
 
-☑ Data Handling	Pandas, NumPy
+\* ✅ Class imbalance (more compliant than non-compliant firms).
 
-☑ Visualization	Matplotlib, Seaborn
+\* ✅ No personally identifiable information (PII).
 
-☑ Modeling	→ Scikit-learn
 
-☑ Explainability	→ SHAP
 
-☑ Deployment	→ Streamlit
+---
 
-☑ Serialization	→ Joblib
 
-☑ Version Control → Git & GitHub
 
-***6. Crisp-DM Methodology***
+\## 5. 🛠️ Tools \& Technologies
 
-**6.1 Data Engineering**
 
-a. Missing value treatment
 
-b. Data type correction
+| Category | Tools Used |
 
-c. Outlier detection
+| :--- | :--- |
 
-d. Feature scaling and encoding
+| \*\*Programming\*\* | Python |
 
-***6.2 Exploratory Data Analysis (EDA)***
+| \*\*Data Handling\*\* | Pandas, NumPy |
 
-👉 Distribution analysis
+| \*\*Visualization\*\* | Matplotlib, Seaborn |
 
-👉 Correlation matrix
+| \*\*Modeling\*\* | Scikit-learn, XGBoost |
 
-👉 Risk profiling by turnover and industry
+| \*\*Explainability\*\* | SHAP |
 
-👉 Visualization of compliance behavior
+| \*\*Deployment\*\* | Streamlit |
 
-***6.3 Feature Engineering***
+| \*\*Serialization\*\* | Joblib |
 
-✔ Turnover quantiles
+| \*\*Version Control\*\* | Git \& GitHub |
 
-✔ One-hot encoding of categorical variables
 
-✔ Normalization of numeric features
 
-***7. Modeling***
+---
 
-**Models Implemented
 
-i. Logistic Regression (baseline)
 
-ii. Random Forest
+\## 6. 🔍 CRISP-DM Methodology
 
-iii. Gradient Boosting
-iv. Xgboost 
 
-**Model Selection Criteria ROC-AUC**
 
-✔ Precision & Recall
+\### 6.1 Data Engineering
 
-✔ Interpretability
+\* \*\*Missing Value Treatment:\*\* Imputed or removed missing data.
 
-✔ Business relevance
+\* \*\*Correction:\*\* Fixed data types and inconsistencies.
 
-***8. Model Evaluation***
+\* \*\*Outliers:\*\* Detected and handled extreme values.
 
-**Evaluation metrics used:**
+\* \*\*Scaling:\*\* Feature scaling and encoding applied.
 
-✔ Confusion Matrix
 
-✔ Accuracy
 
-✔ Precision
+\### 6.2 Exploratory Data Analysis (EDA)
 
-✔ Recall
+We analyzed distributions, correlations, and risk profiles by turnover and industry.
 
-✔ ROC Curve
 
-Cross-validation was applied to ensure model generalization.
 
-***9. Model Explainability***
+<div align="center">
 
-To ensure transparency:
+&nbsp; <img width="48%" alt="EDA 1" src="https://github.com/user-attachments/assets/e10d8f5f-73d2-4d45-b6fc-e42d4b4884ba" />
 
-SHAP values were used to explain predictions.
+&nbsp; <img width="48%" alt="EDA 2" src="https://github.com/user-attachments/assets/dd95905f-a16d-4d9c-926b-066b32aa783d" />
 
-Feature importance was visualized.
+</div>
 
-**Key drivers of tax risk were identified.**
 
-This supports trust, accountability, and regulatory acceptance.
 
-***10. Model Deployment***
+\### 6.3 Feature Engineering
 
-**10.1 Deployment Architecture**
+\* Created Turnover Quantiles.
 
-User → Web Interface → Trained Model → Prediction Engine → Risk Output
+\* One-hot encoding of categorical variables.
 
-**10.2 Deployed Features**
+\* Normalization of numeric features.
 
-The deployed system allows users to:
 
-Enter taxpayer details.
 
-Receive:
+---
 
-Risk probability score
 
-Risk category (Low / Medium / High)
 
-Explanation of drivers
+\## 7. 🤖 Modeling
 
-**10.3 Deployment Stack**
+We implemented and evaluated four models:
 
-Frontend: Streamlit
+1\.  \*\*Logistic Regression\*\* (Baseline)
 
-Backend: Python
+2\.  \*\*Random Forest\*\*
 
-Model: Serialized using Joblib
+3\.  \*\*Gradient Boosting\*\*
 
-Hosting: Local
+4\.  \*\*XGBoost\*\* (Champion Model)
 
-***11. How to Run the System**
 
-**👉 Step 1** – Clone Repository
 
-git clone https://github.com/Ndunguuu01/Tax-Compliance-Prediction.git
+<div align="center">
 
-**👉 Step 2** – Install Dependencies
+&nbsp; <img width="80%" alt="Model Results" src="https://github.com/user-attachments/assets/df949f9b-e513-40c1-97fd-fa7321c1f081" />
+
+</div>
+
+
+
+\*\*Model Selection:\*\*
+
+We selected the champion model based on \*\*ROC-AUC\*\*, Precision, Recall, and Business Interpretability.
+
+
+
+---
+
+
+
+\## 8. 🚀 Deployment
+
+The model is deployed using \*\*Streamlit\*\* to provide a user-friendly interface for tax officers.
+
+
+
+\*\*Workflow:\*\*
+
+`User` → `Web Interface` → `Trained Model` → `Prediction Engine` → `Risk Output`
+
+
+
+\### How to Run Locally
+
+
+
+\*\*Step 1: Clone Repository\*\*
+
+git clone \[https://github.com/Ndunguuu01/Tax-Compliance-Prediction.git](https://github.com/Ndunguuu01/Tax-Compliance-Prediction.git)
+
+cd Tax-Compliance-Prediction
+
+
+
+Step 2: Install Dependencies
+
 pip install -r requirements.txt
 
-**👉 Step 3** – Run Application
+
+
+Step 3: Run Application
+
 streamlit run app.py
 
-**👉 Step 4** – Access App
 
 
-***12. Project Structure**
+\## 9. 📂 Project Structure
 
 ├── data/
 
 ├── notebook/
 
-│   └── CIT_Loss_Prediction_Notebook.ipynb
+│   └── CIT\_Loss\_Prediction\_Notebook.ipynb
 
 ├── models/
 
-│   └── cit_model.pkl
+│   └── cit\_model.pkl
 
 ├── app.py
 
@@ -237,47 +278,29 @@ streamlit run app.py
 
 └── README.md
 
-***13. Results & Business Impact***
-**Key Insights**
 
-✔ Turnover is a strong predictor of risk.
 
-✔ Loss-making firms exhibit higher risk variability.
+\## 10. 🔮 Future Enhancements
 
-✔ Certain industries show consistent compliance issues.
 
-**Business Value**
 
-✔ Faster audit prioritization
+🔌 API integration with live tax systems.
 
-✔ Reduced manual screening
+🔄 Automated retraining pipelines.
 
-✔ Data-driven compliance strategy
+📊 Integration with BI tools (Power BI/Tableau).
 
-***14. Limitations**
+☁️ Cloud deployment (AWS/Azure/GCP).
 
-i. The Model relies on historical data patterns.
 
-ii. Requires periodic retraining.
 
-iii. Predictions are probabilistic, not deterministic.
+⚠️ Ethical \& Legal Considerations
 
-***15. Future Enhancements***
 
-API integration with live tax systems
 
-Automated retraining pipelines
+No personal data was used in this analysis.
 
-Real-time dashboards
+Predictions are advisory only.
 
-Cloud deployment (AWS/Azure/GCP)
+Human oversight is required for all enforcement actions.
 
-Integration with BI tools (Power BI/Tableau)
-
-***16. Ethical & Legal Considerations***
-
-⚠️ No personal data used.
-
-⚠️ Predictions are advisory only.
-
-⚠️ Human oversight required for enforcement
