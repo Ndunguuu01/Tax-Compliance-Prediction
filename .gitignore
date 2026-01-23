@@ -1,5 +1,35 @@
-.ipynb_checkpoints/
-CIT2024.csv
-*.csv
+# --- Python & Notebooks ---
 __pycache__/
+*.py[cod]
+*$py.class
+.ipynb_checkpoints/
+
+# --- Environments ---
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+pythonenv*
+
+# --- Data & Models (IMPORTANT) ---
+
+*.csv
+*.xlsx
+*.pkl
+*.joblib
+*.h5
+*.zip
+*.gz
+
+# --- IDE & System ---
+.vscode/
+.idea/
 .DS_Store
+Thumbs.db
+
+# --- Logs & Temp ---
+*.log
+*.tmp
