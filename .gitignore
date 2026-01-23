@@ -1,0 +1,5 @@
+.ipynb_checkpoints/
+CIT2024.csv
+*.csv
+__pycache__/
+.DS_Store
