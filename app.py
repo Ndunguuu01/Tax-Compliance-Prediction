@@ -1,378 +1,177 @@
-from flask import Flask, render_template, request, flash, redirect, jsonify, session, send_file
-from datetime import datetime
-import os
+import streamlit as st
 import pandas as pd
 import numpy as np
-from werkzeug.utils import secure_filename
-import uuid
+import joblib
+import xgboost as xgb
 
-app = Flask(__name__)
-app.secret_key = 'cit-2024-key'
+# Page Config
+st.set_page_config(page_title="Revenue Radar | KRA", page_icon="📉", layout="centered")
 
-print("=" * 60)
-print("CIT LOSS PREDICTION SYSTEM - WITH BATCH PROCESSING")
-print("=" * 60)
+# --- CUSTOM CSS FOR STYLING ---
+st.markdown("""
+    <style>
+    .big-font { font-size:24px !important; font-weight: bold; }
+    .risk-high { color: #d9534f; font-weight: bold; }
+    .risk-med { color: #f0ad4e; font-weight: bold; }
+    .risk-low { color: #5cb85c; font-weight: bold; }
+    div[data-testid="stMetricValue"] { font-size: 1.2rem; }
+    </style>
+    """, unsafe_allow_html=True)
 
-@app.route('/')
-def home():
-    return render_template('index.html')
+# --- HEADER ---
+st.image("https://github.com/user-attachments/assets/093ba018-e048-479e-9959-274aeffcb24b", use_column_width=True)
+st.title("📉 Revenue Radar: CIT Risk Engine")
+st.markdown(" **Corporate Income Tax Compliance & Audit Intelligence System**")
 
-@app.route('/predict', methods=['GET', 'POST'])
-def predict():
-    """Ratio input - SIMPLE WORKING VERSION"""
-    print(f"PREDICT route called. Method: {request.method}")
-
-    if request.method == 'GET':
-        return render_template('predict_fixed.html')
-
-    elif request.method == 'POST':
-        print("PREDICT form submitted!")
-        print(f"Form data: {dict(request.form)}")
-
-        try:
-            cost_ratio = float(request.form.get('cost_to_turnover', 0))
-            finance_ratio = float(request.form.get('financing_cost_ratio', 0))
-
-            print(f"Cost ratio: {cost_ratio}, Finance ratio: {finance_ratio}")
-
-            risk_score = 30
-
-            if cost_ratio > 0.8:
-                risk_score += 40
-            elif cost_ratio > 0.6:
-                risk_score += 25
-            elif cost_ratio > 0.4:
-                risk_score += 15
-
-            if finance_ratio > 0.3:
-                risk_score += 30
-            elif finance_ratio > 0.2:
-                risk_score += 20
-            elif finance_ratio > 0.1:
-                risk_score += 10
-
-            risk_score = min(risk_score, 100)
-
-            print(f"Risk calculated: {risk_score}%")
-
-            return f'''
-            <!DOCTYPE html>
-            <html>
-            <body style="padding: 20px; font-family: Arial;">
-                <h1>Risk Assessment Complete</h1>
-                <div style="background: #f8f9fa; padding: 20px; border-radius: 10px;">
-                    <h2 style="color: blue;">Risk Score: {risk_score}%</h2>
-                    <p><strong>Risk Level:</strong> {'HIGH' if risk_score > 50 else 'MEDIUM' if risk_score > 30 else 'LOW'}</p>
-                    <p><strong>Action:</strong> {'Review needed' if risk_score > 50 else 'Monitor'}</p>
-                    <p><strong>Time:</strong> {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</p>
-                </div>
-                <br>
-                <a href="/predict" style="padding: 10px 20px; background: blue; color: white; text-decoration: none;">Back to Calculator</a>
-            </body>
-            </html>
-            '''
-
-        except Exception as e:
-            print(f"ERROR: {str(e)}")
-            import traceback
-            traceback.print_exc()
-            return f"<h1>Error</h1><p>{str(e)}</p><a href='/predict'>Back</a>"
-
-@app.route('/raw_input')
-def raw_input_form():
-    return render_template('raw_input.html')
-
-@app.route('/predict_raw', methods=['POST'])
-def predict_raw():
-    """Process raw CIT data"""
-    print("RAW CIT data submitted!")
-    print(f"Data: {dict(request.form)}")
-
+# --- LOAD MODEL (Dynamic Version) ---
+@st.cache_resource
+def load_model():
+    model_path = 'kra_cit_risk_model_v1.pkl'
     try:
-        turnover = float(request.form.get('GROSS_TURNOVER', 0))
-        direct_costs = float(request.form.get('ODC_TOT_OF_OTHER_DIRECT_COSTS', 0))
-        interest = float(request.form.get('FINCEXP_INTEREST_EXP', 0))
+        loaded = joblib.load(model_path)
+        if isinstance(loaded, dict) and 'model' in loaded:
+            return loaded['model']
+        return loaded
+    except:
+        return None
 
-        cost_ratio = direct_costs / turnover if turnover > 0 else 0
-        finance_ratio = interest / turnover if turnover > 0 else 0
+model = load_model()
 
-        risk_score = 30
-        if cost_ratio > 0.8: risk_score += 40
-        elif cost_ratio > 0.6: risk_score += 25
-        elif cost_ratio > 0.4: risk_score += 15
+if model is None:
+    st.error("⚠️ Model file 'kra_cit_risk_model_v1.pkl' not found.")
+    st.stop()
 
-        if finance_ratio > 0.3: risk_score += 30
-        elif finance_ratio > 0.2: risk_score += 20
-        elif finance_ratio > 0.1: risk_score += 10
-
-        risk_score = min(risk_score, 100)
-
-        return f'''
-        <!DOCTYPE html>
-        <html>
-        <body style="padding: 30px; font-family: Arial;">
-            <h1>Raw CIT Data Analysis Results</h1>
-            <div style="background: #f8f9fa; padding: 20px; border-radius: 10px;">
-                <h2 style="color: {'red' if risk_score > 50 else 'orange' if risk_score > 30 else 'green'}">
-                    Risk Score: {risk_score}%
-                </h2>
-                <p><strong>PIN:</strong> {request.form.get('PIN_NO', 'N/A')}</p>
-                <p><strong>Sector:</strong> {request.form.get('BUSINESS_SUBTYPE', 'N/A')}</p>
-                <p><strong>Turnover:</strong> KES {turnover:,.2f}</p>
-                <p><strong>Cost Ratio:</strong> {cost_ratio:.2%}</p>
-                <p><strong>Finance Ratio:</strong> {finance_ratio:.2%}</p>
-                <p><strong>Time:</strong> {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</p>
-            </div>
-            <br>
-            <a href="/raw_input" style="padding: 10px 20px; background: blue; color: white; text-decoration: none; margin-right: 10px;">
-                Back to Raw Input
-            </a>
-            <a href="/" style="padding: 10px 20px; background: green; color: white; text-decoration: none;">
-                Go to Dashboard
-            </a>
-        </body>
-        </html>
-        '''
-
-    except Exception as e:
-        return f"<h1>Error</h1><p>{str(e)}</p>"
-
-@app.route('/batch')
-def batch():
-    return render_template('batch.html')
-
-@app.route('/audit-list')
-def audit_list():
-    return render_template('audit_list.html')
-
-# ============================================================================
-# CIT BATCH PROCESSING ROUTES
-# ============================================================================
-
-@app.route('/cit/batch')
-def cit_batch():
-    """CIT Batch Processing Upload Page"""
-    return render_template('cit_batch.html')
-
-@app.route('/cit/upload', methods=['POST'])
-def cit_upload():
-    """Handle CIT file upload"""
-    try:
-        if 'cit_file' not in request.files:
-            flash('No file selected', 'danger')
-            return redirect(url_for('cit_batch'))
-        
-        file = request.files['cit_file']
-        
-        if file.filename == '':
-            flash('No file selected', 'danger')
-            return redirect(url_for('cit_batch'))
-        
-        allowed_extensions = {'csv', 'xlsx'}
-        file_ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else ''
-        
-        if file_ext not in allowed_extensions:
-            flash('Only CSV and Excel files are allowed', 'danger')
-            return redirect(url_for('cit_batch'))
-        
-        upload_dir = 'uploads'
-        os.makedirs(upload_dir, exist_ok=True)
-        
-        filename = secure_filename(file.filename)
-        unique_filename = f"{uuid.uuid4().hex}_{filename}"
-        filepath = os.path.join(upload_dir, unique_filename)
-        file.save(filepath)
-        
-        if file_ext == 'csv':
-            df = pd.read_csv(filepath, encoding='utf-8')
-        else:
-            df = pd.read_excel(filepath)
-        
-        required_columns = ['PIN_NO', 'BUSINESS_SUBTYPE', 'GROSS_TURNOVER']
-        missing_columns = [col for col in required_columns if col not in df.columns]
-        
-        if missing_columns:
-            os.remove(filepath)
-            flash(f'Missing required columns: {", ".join(missing_columns)}', 'danger')
-            return redirect(url_for('cit_batch'))
-        
-        session['cit_batch_file'] = {
-            'filename': filename,
-            'filepath': filepath,
-            'records': len(df),
-            'columns': list(df.columns),
-            'sample': df.head(5).to_dict('records')
-        }
-        
-        flash(f'✅ File uploaded successfully! Found {len(df)} records.', 'success')
-        return redirect(url_for('cit_preview'))
-        
-    except Exception as e:
-        flash(f'Error uploading file: {str(e)}', 'danger')
-        return redirect(url_for('cit_batch'))
-
-@app.route('/cit/preview')
-def cit_preview():
-    """Preview uploaded CIT data"""
-    if 'cit_batch_file' not in session:
-        flash('Please upload a file first', 'warning')
-        return redirect(url_for('cit_batch'))
+# --- INPUT FORM ---
+with st.form("risk_form"):
+    st.subheader("📋 Firm Financial Profile")
+    col1, col2 = st.columns(2)
     
-    file_info = session['cit_batch_file']
+    with col1:
+        turnover = st.number_input("Gross Turnover (KES)", min_value=0.0, value=15000000.0, step=1000.0)
+        cost_of_sales = st.number_input("Cost of Sales (KES)", min_value=0.0, value=12500000.0, step=1000.0)
     
-    return render_template('cit_preview.html', 
-                         filename=file_info['filename'],
-                         records=file_info['records'],
-                         columns=file_info['columns'],
-                         sample_data=file_info['sample'])
+    with col2:
+        admin_expenses = st.number_input("Admin/Operating Expenses (KES)", min_value=0.0, value=3500000.0, step=1000.0)
+        sector = st.selectbox("Industry Sector", ["Manufacturing", "Service", "Construction", "Agriculture", "Other"])
 
-@app.route('/cit/process', methods=['POST'])
-def cit_process():
-    """Process the CIT batch file"""
-    if 'cit_batch_file' not in session:
-        return jsonify({'success': False, 'message': 'No file uploaded'})
-    
-    file_info = session['cit_batch_file']
-    
-    try:
-        if file_info['filename'].endswith('.csv'):
-            df = pd.read_csv(file_info['filepath'], encoding='utf-8')
-        else:
-            df = pd.read_excel(file_info['filepath'])
-        
-        results = []
-        
-        for _, row in df.iterrows():
-            turnover = float(row.get('GROSS_TURNOVER', 0))
-            direct_costs = float(row.get('ODC_TOT_OF_OTHER_DIRECT_COSTS', 0))
-            interest = float(row.get('FINCEXP_INTEREST_EXP', 0))
-            
-            cost_ratio = direct_costs / turnover if turnover > 0 else 0
-            finance_ratio = interest / turnover if turnover > 0 else 0
-            
-            risk_score = 30
-            if cost_ratio > 0.8: risk_score += 40
-            elif cost_ratio > 0.6: risk_score += 25
-            elif cost_ratio > 0.4: risk_score += 15
+    submit = st.form_submit_button("🔍 Run Compliance Audit")
 
-            if finance_ratio > 0.3: risk_score += 30
-            elif finance_ratio > 0.2: risk_score += 20
-            elif finance_ratio > 0.1: risk_score += 10
-
-            risk_score = min(risk_score, 100)
-            
-            if risk_score > 50:
-                risk_level = 'HIGH'
-                risk_color = 'danger'
-            elif risk_score > 30:
-                risk_level = 'MEDIUM'
-                risk_color = 'warning'
-            else:
-                risk_level = 'LOW'
-                risk_color = 'success'
-            
-            results.append({
-                'PIN_NO': str(row.get('PIN_NO', 'N/A')),
-                'BUSINESS_SUBTYPE': str(row.get('BUSINESS_SUBTYPE', 'N/A')),
-                'GROSS_TURNOVER': f"{turnover:,.2f}",
-                'COST_RATIO': f"{cost_ratio:.2%}",
-                'FINANCE_RATIO': f"{finance_ratio:.2%}",
-                'RISK_SCORE': f"{risk_score}%",
-                'RISK_LEVEL': risk_level,
-                'RISK_COLOR': risk_color,
-                'ACTION': 'Review needed' if risk_score > 50 else 'Monitor'
-            })
-        
-        results_df = pd.DataFrame(results)
-        output_filename = f"cit_results_{uuid.uuid4().hex[:8]}.csv"
-        output_path = os.path.join('uploads', output_filename)
-        results_df.to_csv(output_path, index=False)
-        
-        session['cit_results'] = {
-            'output_file': output_filename,
-            'total_records': len(results),
-            'high_risk': len([r for r in results if r['RISK_LEVEL'] == 'HIGH']),
-            'medium_risk': len([r for r in results if r['RISK_LEVEL'] == 'MEDIUM']),
-            'low_risk': len([r for r in results if r['RISK_LEVEL'] == 'LOW'])
-        }
-        
-        if os.path.exists(file_info['filepath']):
-            os.remove(file_info['filepath'])
-        session.pop('cit_batch_file', None)
-        
-        return jsonify({
-            'success': True,
-            'message': f'Successfully processed {len(results)} records',
-            'high_risk': session['cit_results']['high_risk'],
-            'medium_risk': session['cit_results']['medium_risk'],
-            'low_risk': session['cit_results']['low_risk']
-        })
-        
-    except Exception as e:
-        return jsonify({'success': False, 'message': f'Processing error: {str(e)}'})
-
-@app.route('/cit/results')
-def cit_results():
-    """Show CIT batch processing results"""
-    if 'cit_results' not in session:
-        flash('No results found. Please process a batch first.', 'warning')
-        return redirect(url_for('cit_batch'))
+# --- ANALYSIS ENGINE ---
+if submit:
+    st.divider()
     
-    results_info = session['cit_results']
+    # 1. Feature Engineering
+    cost_ratio = cost_of_sales / turnover if turnover > 0 else 0
+    admin_ratio = admin_expenses / turnover if turnover > 0 else 0
+    profit_margin = (turnover - cost_of_sales - admin_expenses) / turnover if turnover > 0 else 0
     
-    results_path = os.path.join('uploads', results_info['output_file'])
-    if os.path.exists(results_path):
-        df = pd.read_csv(results_path)
-        results_table = df.to_dict('records')
-    else:
-        results_table = []
-    
-    return render_template('cit_results.html',
-                         results_table=results_table,
-                         total_records=results_info['total_records'],
-                         high_risk=results_info['high_risk'],
-                         medium_risk=results_info['medium_risk'],
-                         low_risk=results_info['low_risk'])
-
-@app.route('/cit/download')
-def cit_download():
-    """Download processed results"""
-    if 'cit_results' not in session:
-        flash('No results to download', 'warning')
-        return redirect(url_for('cit_batch'))
-    
-    results_file = session['cit_results']['output_file']
-    filepath = os.path.join('uploads', results_file)
-    
-    if os.path.exists(filepath):
-        return send_file(filepath, as_attachment=True)
-    else:
-        flash('Results file not found', 'danger')
-        return redirect(url_for('cit_batch'))
-
-@app.route('/cit/template')
-def cit_template():
-    """Download CIT template"""
-    template_data = {
-        'PIN_NO': ['A123456789X', 'B987654321Y', 'C112233445Z'],
-        'BUSINESS_SUBTYPE': ['Manufacturing', 'Services', 'Retail'],
-        'GROSS_TURNOVER': [25000000, 15000000, 8000000],
-        'ODC_TOT_OF_OTHER_DIRECT_COSTS': [20000000, 12000000, 7000000],
-        'FINCEXP_INTEREST_EXP': [750000, 300000, 160000],
-        'TAX_YEAR': [2023, 2023, 2023]
+    # 2. Prepare Data (Dynamic Bridge)
+    input_data = {
+        'num__grossturnover': turnover,
+        'num__cost_of_sales': cost_of_sales,
+        'num__total_administrative_exp': admin_expenses,
+        'num__cost_to_turnover': cost_ratio,
+        'num__admin_cost_ratio': admin_ratio,
+        'cat__business_type_Company': 1,
+        'cat__return_type_Original': 1
     }
     
-    df = pd.DataFrame(template_data)
-    template_path = os.path.join('uploads', 'cit_template.csv')
-    df.to_csv(template_path, index=False)
-    
-    return send_file(template_path, 
-                    as_attachment=True, 
-                    download_name='cit_batch_template.csv')
+    # Sector Mapping
+    if sector == "Manufacturing": input_data['cat__sector_MANUFACTURING'] = 1
+    elif sector == "Service": input_data['cat__sector_SERVICE ACTIVITIES'] = 1
+    elif sector == "Construction": input_data['cat__sector_CONSTRUCTION'] = 1
+    elif sector == "Agriculture": input_data['cat__sector_AGRICULTURE, FORESTRY AND FISHING'] = 1
+    else: input_data['cat__sector_Other'] = 1
 
-if __name__ == '__main__':
-    print("✅ Registered routes:")
-    for rule in app.url_map.iter_rules():
-        print(f"   {rule.rule} -> {rule.endpoint}")
-    print("=" * 60)
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    # 3. Predict
+    try:
+        df_user = pd.DataFrame([input_data])
+        
+        # Auto-detect required columns
+        req_cols = None
+        if hasattr(model, "feature_names"): req_cols = model.feature_names
+        elif hasattr(model, "feature_names_in_"): req_cols = model.feature_names_in_
+        elif hasattr(model, "get_booster"): req_cols = model.get_booster().feature_names
+            
+        if req_cols is not None:
+            df_final = df_user.reindex(columns=req_cols, fill_value=0)
+        else:
+            df_final = df_user
+
+        if hasattr(model, "predict_proba"):
+            probability = model.predict_proba(df_final)[0][1]
+        else:
+            probability = model.predict(xgb.DMatrix(df_final))
+            if isinstance(probability, np.ndarray): probability = probability[0]
+
+        # --- DETAILED OUTPUT DASHBOARD ---
+        
+        # A. Score Header
+        st.subheader("🛡️ Compliance Risk Assessment")
+        
+        col_score, col_gauge = st.columns([1, 2])
+        
+        with col_score:
+            score_pct = probability * 100
+            if probability > 0.65:
+                st.markdown(f"<span class='big-font risk-high'>{score_pct:.1f}%</span>", unsafe_allow_html=True)
+                st.markdown("**Status:** :red[High Risk]")
+            elif probability > 0.35:
+                st.markdown(f"<span class='big-font risk-med'>{score_pct:.1f}%</span>", unsafe_allow_html=True)
+                st.markdown("**Status:** :orange[Medium Risk]")
+            else:
+                st.markdown(f"<span class='big-font risk-low'>{score_pct:.1f}%</span>", unsafe_allow_html=True)
+                st.markdown("**Status:** :green[Low Risk]")
+
+        with col_gauge:
+            st.write("Risk Probability Gauge")
+            st.progress(probability)
+            if probability > 0.65:
+                st.caption("This firm exhibits strong patterns associated with artificial loss reporting.")
+
+        st.divider()
+
+        # B. Financial Health Indicators
+        st.subheader("📊 Financial Health Indicators")
+        kpi1, kpi2, kpi3 = st.columns(3)
+        
+        kpi1.metric("Cost of Sales Ratio", f"{cost_ratio:.1%}", 
+                    delta="High" if cost_ratio > 0.7 else "Normal", delta_color="inverse")
+        
+        kpi2.metric("Net Profit Margin", f"{profit_margin:.1%}", 
+                    delta="Loss" if profit_margin < 0 else "Healthy", delta_color="normal")
+        
+        kpi3.metric("Admin Expense Ratio", f"{admin_ratio:.1%}", 
+                    delta="High" if admin_ratio > 0.4 else "Normal", delta_color="inverse")
+
+        # C. Audit Intelligence (Why is it high risk?)
+        st.subheader("🚩 Audit Intelligence Reports")
+        
+        flags = []
+        if cost_ratio > 0.75:
+            flags.append(f"** inflated Cost Structure:** Cost of Sales is consuming {cost_ratio:.0%} of turnover, significantly reducing taxable income.")
+        if profit_margin < 0:
+            flags.append(f"**Perpetual Loss Position:** The firm is reporting a loss of {abs(profit_margin*turnover):,.0f} KES. Verify if this aligns with business expansion or artificial evasion.")
+        if admin_ratio > 0.5:
+            flags.append("**Excessive Admin Expenses:** Operating expenses are unusually high compared to revenue.")
+        
+        if not flags and probability > 0.5:
+             flags.append("**Pattern Anomaly:** While individual ratios seem normal, the combination of features matches known non-compliant profiles (e.g., sector-specific anomalies).")
+        
+        if flags:
+            for flag in flags:
+                st.error(flag, icon="🚨")
+        else:
+            st.success("No major financial anomalies detected in the provided inputs.", icon="✅")
+
+        # D. Recommended Actions
+        if probability > 0.5:
+            with st.expander("📂 Recommended Audit Steps", expanded=True):
+                st.write("""
+                1. **Request General Ledger:** Verify 'Other Direct Costs' and 'Admin Expenses' for non-allowable deductions.
+                2. **Supplier Validation:** Check if major cost components correspond to ETR receipts or valid invoices.
+                3. **Related Party Checks:** Investigate if high costs are payments to related entities (Transfer Pricing risk).
+                """)
+
+    except Exception as e:
+        st.error(f"Analysis failed: {e}")
